@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriveCheck | Driving License Eligibility Portal</title>
+    <!-- Google Fonts: Inter & JetBrains Mono for License IDs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-300 antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- ==================== HEADER / NAVIGATION ==================== -->
+    <header class="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand Identity -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight leading-none">DriveCheck <span class="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300 ml-1">RTO Portal</span></h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Automated License Eligibility Engine</p>
+                </div>
+            </div>
+
+            <!-- Right Actions: Rule Badge & Theme Toggle -->
+            <div class="flex items-center gap-3">
+                <span class="hidden md:inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Rule: Age &ge; 18 AND Test Passed
+                </span>
+
+                <button id="themeToggle" type="button" aria-label="Toggle Dark Mode" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <svg id="moonIcon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN WORKSPACE ==================== -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Toast Notification Banner -->
+        <div id="toastBanner" role="status" aria-live="polite" class="hidden fixed bottom-5 right-5 z-50 max-w-sm w-full bg-slate-900 dark:bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center justify-between gap-3 transition-all">
+            <div class="flex items-center gap-2.5">
+                <span id="toastIcon" class="text-emerald-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </span>
+                <p id="toastMessage" class="text-sm font-medium">Action completed.</p>
+            </div>
+            <button type="button" onclick="hideToast()" class="text-slate-400 hover:text-white text-xs font-semibold">Dismiss</button>
+        </div>
+
+        <!-- Top Grid: Application Form (Left) + Eligibility Result & License Card (Right) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- LEFT COLUMN: APPLICANT DETAILS FORM -->
+            <section aria-labelledby="form-heading" class="lg:col-span-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 sm:p-8">
+                <div class="flex items-center justify-between pb-5 mb-6 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                        <h2 id="form-heading" class="text-xl font-bold text-slate-900 dark:text-white">Applicant Verification</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Enter candidate credentials to evaluate license eligibility.</p>
+                    </div>
+                    <button type="button" id="fillDemoBtn" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-600 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 dark:text-brand-300 transition-colors">
+                        Auto-Fill Sample
+                    </button>
+                </div>
+
+                <form id="eligibilityForm" novalidate class="space-y-5">
+                    <!-- 1. Full Name -->
+                    <div>
+                        <label for="fullName" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Full Legal Name <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" id="fullName" name="fullName" placeholder="e.g., Aarav Sharma" required
+                            class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all">
+                        <p id="nameError" class="hidden text-xs text-rose-500 font-medium mt-1.5">Please enter the applicant's full name (at least 2 characters).</p>
+                    </div>
+
+                    <!-- 2. Date of Birth & Direct Age Input (Synchronized) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="dobInput" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                                Date of Birth <span class="text-xs font-normal text-slate-400">(Auto-calculates age)</span>
+                            </label>
+                            <input type="date" id="dobInput" name="dobInput"
+                                class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all">
+                        </div>
+
+                        <div>
+                            <label for="ageInput" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                                Applicant Age (Years) <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="number" id="ageInput" name="ageInput" min="1" max="120" placeholder="e.g., 21" required
+                                    class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all">
+                                <span id="ageStatusBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold px-2 py-0.5 rounded-md"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <p id="ageError" class="hidden text-xs text-rose-500 font-medium -mt-3">Please enter a valid age between 1 and 120.</p>
+
+                    <!-- 3. Vehicle Category Selection -->
+                    <div>
+                        <label for="vehicleCategory" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Vehicle Class / Category
+                        </label>
+                        <select id="vehicleCategory" name="vehicleCategory"
+                            class="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all">
+                            <option value="LMV">LMV — Light Motor Vehicle (Car / Jeep)</option>
+                            <option value="MCWG">MCWG — Motorcycle With Gear (Two-Wheeler)</option>
+                            <option value="HMV">HMV / Commercial — Heavy Transport Vehicle</option>
+                        </select>
+                        <p id="categoryHint" class="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Standard eligibility requires Age &ge; 18 and Practical Driving Test Passed.</p>
+                    </div>
+
+                    <!-- 4. Practical Driving Test Status (Radio Cards) -->
+                    <div>
+                        <span class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                            Practical Driving Test Result <span class="text-rose-500">*</span>
+                        </span>
+                        <div class="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Practical Driving Test Result">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="testStatus" value="passed" class="peer sr-only" checked>
+                                <div class="p-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 peer-checked:border-emerald-500 peer-checked:bg-emerald-50/60 dark:peer-checked:bg-emerald-950/30 transition-all flex items-center gap-3">
+                                    <div class="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center shrink-0">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100">Passed</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Cleared road test</p>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer">
+                                <input type="radio" name="testStatus" value="failed" class="peer sr-only">
+                                <div class="p-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 peer-checked:border-rose-500 peer-checked:bg-rose-50/60 dark:peer-checked:bg-rose-950/30 transition-all flex items-center gap-3">
+                                    <div class="w-5 h-5 rounded-full border-2 border-rose-500 flex items-center justify-center shrink-0">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800 dark:text-slate-100">Failed / Pending</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Not cleared yet</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 5. Additional Compliance Checks -->
+                    <div class="pt-1 space-y-2.5">
+                        <span class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Supplementary Clearances</span>
+                        <label class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800 transition-colors">
+                            <input type="checkbox" id="theoryCheck" checked class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300">
+                            <span class="text-sm text-slate-700 dark:text-slate-300">Road Signs &amp; Traffic Theory Exam Cleared</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800 transition-colors">
+                            <input type="checkbox" id="visionCheck" checked class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300">
+                            <span class="text-sm text-slate-700 dark:text-slate-300">Medical &amp; Vision Fitness Certificate Verified</span>
+                        </label>
+                    </div>
+
+                    <!-- Form Action Buttons -->
+                    <div class="pt-3 flex flex-col sm:flex-row gap-3">
+                        <button type="submit" class="flex-1 py-3 px-5 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white font-semibold shadow-lg shadow-brand-600/25 transition-all flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Check Eligibility
+                        </button>
+                        <button type="button" id="resetFormBtn" class="py-3 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition-all">
+                            Reset
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- RIGHT COLUMN: ELIGIBILITY RESULT & DIGITAL LICENSE PREVIEW -->
+            <section aria-labelledby="result-heading" class="lg:col-span-6 space-y-6">
+
+                <!-- Eligibility Verdict Card -->
+                <div id="resultCard" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 sm:p-8 transition-all">
+                    <div class="flex items-center justify-between mb-5">
+                        <h2 id="result-heading" class="text-xl font-bold text-slate-900 dark:text-white">Eligibility Assessment</h2>
+                        <span id="liveModeBadge" class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                            Awaiting Submission
+                        </span>
+                    </div>
+
+                    <div id="resultEmptyState" class="py-8 text-center space-y-3">
+                        <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+                        </div>
+                        <h3 class="text-base font-semibold text-slate-700 dark:text-slate-300">Ready to Evaluate Candidate</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                            Complete the form on the left and click <strong>Check Eligibility</strong> to verify age (&ge; 18) and driving test criteria.
+                        </p>
+                    </div>
+
+                    <div id="resultContent" class="hidden space-y-5">
+                        <div id="verdictBanner" class="p-4 rounded-xl border flex items-start gap-3.5">
+                            <div id="verdictIcon" class="mt-0.5 shrink-0"></div>
+                            <div>
+                                <h3 id="verdictTitle" class="text-lg font-extrabold tracking-tight"></h3>
+                                <p id="verdictSummary" class="text-sm mt-0.5"></p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200/70 dark:border-slate-700/70 space-y-3">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Boolean Logic Gate (Condition A &amp;&amp; Condition B)</p>
+                            <ul id="criteriaList" class="space-y-2.5 text-sm"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DIGITAL PROVISIONAL LICENSE PREVIEW CARD -->
+                <div id="licensePreviewWrapper" class="hidden transition-all duration-500">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            Provisional Digital License Generated
+                        </span>
+                        <button type="button" id="copyLicenseBtn" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            Copy License ID
+                        </button>
+                    </div>
+
+                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-brand-900 to-indigo-950 text-white p-6 shadow-xl border border-white/15">
+                        <div class="absolute -right-12 -top-12 w-44 h-44 rounded-full bg-brand-400/10 blur-xl pointer-events-none"></div>
+                        <div class="absolute -left-10 -bottom-12 w-40 h-40 rounded-full bg-emerald-400/10 blur-xl pointer-events-none"></div>
+
+                        <div class="flex items-center justify-between border-b border-white/15 pb-3.5 mb-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-brand-300 text-sm">DL</div>
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-widest text-brand-200 font-semibold">Department of Motor Vehicles</p>
+                                    <p class="text-sm font-bold tracking-wide">PROVISIONAL DRIVING PERMIT</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-md bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-mono font-bold">
+                                ACTIVE
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+                            <div id="cardAvatar" class="w-16 h-20 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-xl font-extrabold text-brand-200 shrink-0">
+                                AS
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-x-6 gap-y-2.5 flex-grow text-xs w-full">
+                                <div class="col-span-2">
+                                    <p class="text-slate-400 uppercase text-[10px] tracking-wider">License Holder</p>
+                                    <p id="cardHolderName" class="text-base font-bold text-white truncate">AARAV SHARMA</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400 uppercase text-[10px] tracking-wider">License Number</p>
+                                    <p id="cardLicenseNo" class="font-mono font-bold text-brand-300">DL-2026-849201</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400 uppercase text-[10px] tracking-wider">Verified Age</p>
+                                    <p id="cardAge" class="font-semibold text-white">21 Years</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400 uppercase text-[10px] tracking-wider">Vehicle Class</p>
+                                    <p id="cardClass" class="font-semibold text-emerald-300">LMV</p>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400 uppercase text-[10px] tracking-wider">Issue Date</p>
+                                    <p id="cardIssueDate" class="font-semibold text-white">27 Nov 2026</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- ==================== BOTTOM SECTION: LOCALSTORAGE HISTORY LOG ==================== -->
+        <section aria-labelledby="history-heading" class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 mb-6 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h2 id="history-heading" class="text-xl font-bold text-slate-900 dark:text-white">Verification Audit Log</h2>
+                        <span id="historyCountBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">0</span>
+                    </div>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Persisted locally in your browser via <code class="text-xs font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">localStorage</code>.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1" role="group" aria-label="Filter history records">
+                        <button type="button" data-filter="all" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition-all">All</button>
+                        <button type="button" data-filter="eligible" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">Eligible</button>
+                        <button type="button" data-filter="ineligible" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">Not Eligible</button>
+                    </div>
+
+                    <button type="button" id="clearHistoryBtn" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-950/70 transition-colors">
+                        Clear Log
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 dark:border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-400">
+                            <th class="py-3 px-4">Applicant Name</th>
+                            <th class="py-3 px-4">Age</th>
+                            <th class="py-3 px-4">Category</th>
+                            <th class="py-3 px-4">Driving Test</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4">Reason / Remarks</th>
+                            <th class="py-3 px-4 text-right">Checked At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm"></tbody>
+                </table>
+            </div>
+
+            <div id="emptyHistoryState" class="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                No applicant verification records yet. Submit a check above to populate the audit log.
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+            <p><strong>DriveCheck Capstone Project</strong> &bull; Web Development Portfolio Artifact</p>
+            <p>Core Logic: <code class="font-mono text-brand-600 dark:text-brand-400">isEligible = (age >= 18) && (testPassed === true)</code></p>
+        </div>
+    </footer>
+
+    <!-- ==================== APPLICATION JAVASCRIPT ==================== -->
+    <script>
+        const STORAGE_KEY = 'drivecheck_audit_log_v1';
+        const THEME_KEY = 'drivecheck_theme_v1';
+
+        const form = document.getElementById('eligibilityForm');
+        const fullNameInput = document.getElementById('fullName');
+        const dobInput = document.getElementById('dobInput');
+        const ageInput = document.getElementById('ageInput');
+        const ageStatusBadge = document.getElementById('ageStatusBadge');
+        const vehicleCategorySelect = document.getElementById('vehicleCategory');
+        const categoryHint = document.getElementById('categoryHint');
+        const theoryCheck = document.getElementById('theoryCheck');
+        const visionCheck = document.getElementById('visionCheck');
+
+        const nameError = document.getElementById('nameError');
+        const ageError = document.getElementById('ageError');
+
+        const resultEmptyState = document.getElementById('resultEmptyState');
+        const resultContent = document.getElementById('resultContent');
+        const liveModeBadge = document.getElementById('liveModeBadge');
+        const verdictBanner = document.getElementById('verdictBanner');
+        const verdictIcon = document.getElementById('verdictIcon');
+        const verdictTitle = document.getElementById('verdictTitle');
+        const verdictSummary = document.getElementById('verdictSummary');
+        const criteriaList = document.getElementById('criteriaList');
+        const licensePreviewWrapper = document.getElementById('licensePreviewWrapper');
+
+        const cardAvatar = document.getElementById('cardAvatar');
+        const cardHolderName = document.getElementById('cardHolderName');
+        const cardLicenseNo = document.getElementById('cardLicenseNo');
+        const cardAge = document.getElementById('cardAge');
+        const cardClass = document.getElementById('cardClass');
+        const cardIssueDate = document.getElementById('cardIssueDate');
+
+        const historyTableBody = document.getElementById('historyTableBody');
+        const emptyHistoryState = document.getElementById('emptyHistoryState');
+        const historyCountBadge = document.getElementById('historyCountBadge');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+
+        const fillDemoBtn = document.getElementById('fillDemoBtn');
+        const resetFormBtn = document.getElementById('resetFormBtn');
+        const copyLicenseBtn = document.getElementById('copyLicenseBtn');
+        const themeToggle = document.getElementById('themeToggle');
+
+        const toastBanner = document.getElementById('toastBanner');
+        const toastMessage = document.getElementById('toastMessage');
+        let toastTimer = null;
+        let activeFilter = 'all';
+
+        function showToast(msg) {
+            toastMessage.textContent = msg;
+            toastBanner.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toastBanner.classList.add('hidden'), 3200);
+        }
+
+        function hideToast() {
+            toastBanner.classList.add('hidden');
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
+            }
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            document.documentElement.classList.toggle('light', !isDark);
+            localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+        });
+
+        function calculateAgeFromDOB(dobString) {
+            if (!dobString) return null;
+            const birthDate = new Date(dobString + 'T00:00:00');
+            if (Number.isNaN(birthDate.getTime())) return null;
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        function updateAgeBadge(age) {
+            if (age === '' || age === null || Number.isNaN(Number(age))) {
+                ageStatusBadge.classList.add('hidden');
+                return;
+            }
+            const numericAge = Number(age);
+            ageStatusBadge.classList.remove('hidden');
+            if (numericAge >= 18) {
+                ageStatusBadge.textContent = '18+ Verified';
+                ageStatusBadge.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300';
+            } else {
+                ageStatusBadge.textContent = 'Under 18';
+                ageStatusBadge.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300';
+            }
+        }
+
+        dobInput.addEventListener('change', () => {
+            const calculated = calculateAgeFromDOB(dobInput.value);
+            if (calculated !== null && calculated >= 0 && calculated <= 120) {
+                ageInput.value = calculated;
+                updateAgeBadge(calculated);
+                ageError.classList.add('hidden');
+            }
+        });
+
+        ageInput.addEventListener('input', () => {
+            updateAgeBadge(ageInput.value);
+            if (ageInput.value !== '') {
+                ageError.classList.add('hidden');
+            }
+        });
+
+        fullNameInput.addEventListener('input', () => {
+            if (fullNameInput.value.trim().length >= 2) {
+                nameError.classList.add('hidden');
+            }
+        });
+
+        vehicleCategorySelect.addEventListener('change', () => {
+            const val = vehicleCategorySelect.value;
+            if (val === 'HMV') {
+                categoryHint.textContent = 'Commercial/HMV note: Core rule still checks Age >= 18 and Test Passed; additional commercial permits may apply in practice.';
+            } else {
+                categoryHint.textContent = 'Standard eligibility requires Age >= 18 and Practical Driving Test Passed.';
+            }
+        });
+
+        function getInitials(name) {
+            return name
+                .trim()
+                .split(/\s+/)
+                .slice(0, 2)
+                .map(part => part[0]?.toUpperCase() || '')
+                .join('') || 'DL';
+        }
+
+        function generateLicenseNumber() {
+            const year = new Date().getFullYear();
+            const randomSix = Math.floor(100000 + Math.random() * 900000);
+            return `DL-${year}-${randomSix}`;
+        }
+
+        function formatDateShort(date = new Date()) {
+            return date.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function formatTimeShort(date = new Date()) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function evaluateEligibility({ name, age, testPassed, category, theoryCleared, visionVerified }) {
+            const ageConditionMet = age >= 18;
+            const testConditionMet = testPassed === true;
+            const isEligible = ageConditionMet && testConditionMet;
+
+            const reasons = [];
+            if (!ageConditionMet) {
+                reasons.push(`Applicant age (${age}) is below the minimum required age of 18`);
+            }
+            if (!testConditionMet) {
+                reasons.push('Practical driving test has not been passed');
+            }
+
+            const remarks = isEligible
+                ? `Qualified for ${category} license${(!theoryCleared || !visionVerified) ? ' (verify supplementary docs)' : ''}`
+                : reasons.join(' AND ');
+
+            return {
+                name,
+                age,
+                category,
+                testPassed,
+                ageConditionMet,
+                testConditionMet,
+                theoryCleared,
+                visionVerified,
+                isEligible,
+                reasons,
+                remarks
+            };
+        }
+
+        function renderEvaluation(result) {
+            resultEmptyState.classList.add('hidden');
+            resultContent.classList.remove('hidden');
+
+            if (result.isEligible) {
+                liveModeBadge.textContent = 'APPROVED';
+                liveModeBadge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300';
+
+                verdictBanner.className = 'p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/70 bg-emerald-50/80 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-100 flex items-start gap-3.5';
+                verdictIcon.innerHTML = `<svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                verdictTitle.textContent = 'ELIGIBLE FOR DRIVING LICENSE';
+                verdictSummary.textContent = `${result.name} meets both mandatory requirements (Age ${result.age} >= 18 and Practical Test Passed) for ${result.category}.`;
+
+                cardAvatar.textContent = getInitials(result.name);
+                cardHolderName.textContent = result.name.toUpperCase();
+                cardLicenseNo.textContent = generateLicenseNumber();
+                cardAge.textContent = `${result.age} Years`;
+                cardClass.textContent = result.category;
+                cardIssueDate.textContent = formatDateShort();
+                licensePreviewWrapper.classList.remove('hidden');
+            } else {
+                liveModeBadge.textContent = 'NOT ELIGIBLE';
+                liveModeBadge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300';
+
+                verdictBanner.className = 'p-4 rounded-xl border border-rose-200 dark:border-rose-800/70 bg-rose-50/80 dark:bg-rose-950/30 text-rose-950 dark:text-rose-100 flex items-start gap-3.5';
+                verdictIcon.innerHTML = `<svg class="w-6 h-6 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                verdictTitle.textContent = 'NOT ELIGIBLE FOR DRIVING LICENSE';
+                verdictSummary.textContent = `Reason: ${result.reasons.join('; ')}.`;
+
+                licensePreviewWrapper.classList.add('hidden');
+            }
+
+            criteriaList.innerHTML = `
+                <li class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80">
+                    <span class="text-slate-700 dark:text-slate-200 font-medium">Condition A: Age is 18 or above (Entered: <strong>${result.age}</strong>)</span>
+                    <span class="px-2 py-0.5 rounded text-xs font-mono font-bold ${result.ageConditionMet ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300'}">
+                        ${result.ageConditionMet ? 'TRUE' : 'FALSE'}
+                    </span>
+                </li>
+                <li class="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80">
+                    <span class="text-slate-700 dark:text-slate-200 font-medium">Condition B: Practical Driving Test Passed</span>
+                    <span class="px-2 py-0.5 rounded text-xs font-mono font-bold ${result.testConditionMet ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300'}">
+                        ${result.testConditionMet ? 'TRUE' : 'FALSE'}
+                    </span>
+                </li>
+            `;
+        }
+
+        function getHistory() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveHistory(records) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderHistory() {
+            const allRecords = getHistory();
+            historyCountBadge.textContent = allRecords.length;
+
+            const filtered = allRecords.filter(item => {
+                if (activeFilter === 'eligible') return item.isEligible === true;
+                if (activeFilter === 'ineligible') return item.isEligible === false;
+                return true;
+            });
+
+            historyTableBody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyHistoryState.classList.remove('hidden');
+                return;
+            }
+
+            emptyHistoryState.classList.add('hidden');
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">${escapeHTML(item.name)}</td>
+                    <td class="py-3.5 px-4 text-slate-600 dark:text-slate-300">${item.age} yrs</td>
+                    <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-xs font-mono font-semibold">${escapeHTML(item.category)}</span></td>
+                    <td class="py-3.5 px-4">
+                        <span class="text-xs font-semibold ${item.testPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+                            ${item.testPassed ? 'Passed' : 'Failed / Pending'}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${item.isEligible ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300'}">
+                            ${item.isEligible ? 'Eligible' : 'Not Eligible'}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400 max-w-xs">${escapeHTML(item.remarks)}</td>
+                    <td class="py-3.5 px-4 text-right text-xs text-slate-400 whitespace-nowrap">${escapeHTML(item.checkedAt)}</td>
+                `;
+                historyTableBody.appendChild(tr);
+            });
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const name = fullNameInput.value.trim();
+            const ageVal = Number(ageInput.value);
+            const selectedRadio = form.querySelector('input[name="testStatus"]:checked');
+            const testPassed = selectedRadio ? selectedRadio.value === 'passed' : false;
+            const category = vehicleCategorySelect.value;
+
+            let valid = true;
+            if (name.length < 2) {
+                nameError.classList.remove('hidden');
+                valid = false;
+            } else {
+                nameError.classList.add('hidden');
+            }
+
+            if (!ageInput.value || Number.isNaN(ageVal) || ageVal < 1 || ageVal > 120) {
+                ageError.classList.remove('hidden');
+                valid = false;
+            } else {
+                ageError.classList.add('hidden');
+            }
+
+            if (!valid) {
+                showToast('Please fix the highlighted form fields.');
+                return;
+            }
+
+            const evaluated = evaluateEligibility({
+                name,
+                age: ageVal,
+                testPassed,
+                category,
+                theoryCleared: theoryCheck.checked,
+                visionVerified: visionCheck.checked
+            });
+
+            renderEvaluation(evaluated);
+
+            const history = getHistory();
+            history.unshift({
+                ...evaluated,
+                checkedAt: `${formatDateShort()} • ${formatTimeShort()}`
+            });
+            saveHistory(history.slice(0, 50));
+            renderHistory();
+
+            showToast(evaluated.isEligible ? 'Applicant is eligible! License card generated.' : 'Eligibility check completed: Not eligible.');
+        });
+
+        fillDemoBtn.addEventListener('click', () => {
+            fullNameInput.value = 'Rohan Verma';
+            ageInput.value = '22';
+            dobInput.value = '2004-05-15';
+            vehicleCategorySelect.value = 'LMV';
+            const passedRadio = form.querySelector('input[name="testStatus"][value="passed"]');
+            if (passedRadio) passedRadio.checked = true;
+            theoryCheck.checked = true;
+            visionCheck.checked = true;
+            nameError.classList.add('hidden');
+            ageError.classList.add('hidden');
+            updateAgeBadge(22);
+            showToast('Sample eligible applicant loaded.');
+        });
+
+        resetFormBtn.addEventListener('click', () => {
+            form.reset();
+            nameError.classList.add('hidden');
+            ageError.classList.add('hidden');
+            ageStatusBadge.classList.add('hidden');
+            resultContent.classList.add('hidden');
+            licensePreviewWrapper.classList.add('hidden');
+            resultEmptyState.classList.remove('hidden');
+            liveModeBadge.textContent = 'Awaiting Submission';
+            liveModeBadge.className = 'text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+            showToast('Form reset.');
+        });
+
+        copyLicenseBtn.addEventListener('click', async () => {
+            const idText = cardLicenseNo.textContent.trim();
+            try {
+                await navigator.clipboard.writeText(idText);
+                showToast(`Copied ${idText} to clipboard.`);
+            } catch {
+                showToast(`License ID: ${idText}`);
+            }
+        });
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                activeFilter = btn.dataset.filter;
+                filterButtons.forEach(b => {
+                    b.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all';
+                });
+                btn.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition-all';
+                renderHistory();
+            });
+        });
+
+        clearHistoryBtn.addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_KEY);
+            renderHistory();
+            showToast('Verification audit log cleared.');
+        });
+
+        initTheme();
+        renderHistory();
+    </script>
+</body>
+</html>
